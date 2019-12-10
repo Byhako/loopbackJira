@@ -1,4 +1,4 @@
-import {Entity, model, property} from '@loopback/repository';
+import { Entity, model, property } from '@loopback/repository';
 
 @model()
 export class Issue extends Entity {
@@ -13,13 +13,13 @@ export class Issue extends Entity {
     type: 'string',
     required: true,
   })
-  summary: string;
+  sumary: string;
 
   @property({
     type: 'string',
     required: true,
   })
-  description: string;
+  descripcion: string;
 
   @property({
     type: 'number',
