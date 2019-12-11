@@ -9,7 +9,7 @@ import {
   getFilterSchemaFor,
   getModelSchemaRef,
 } from '@loopback/rest';
-import { Tiempo } from '../models';
+import { Tiempo, Usuario } from '../models';
 import moment from 'moment-with-locales-es6';
 
 import { TiempoRepository, UsuarioRepository, ProyectoRepository, IssueRepository } from '../repositories';
@@ -68,7 +68,7 @@ export class TiempoController {
     @param.path.string('fecha_fin') fecha_fin: string,
     // @param.query.object('filter', getFilterSchemaFor(Tiempo)) filter?: Filter<Tiempo>,
   ): Promise<{}> {
-    const fechaInicio = moment(fecha_inicio).date();
+    const fechaInicio = moment(fecha_inicio);
     const fechaFin = moment(fecha_fin);
 
     // detalles de usuario
@@ -167,6 +167,100 @@ export class TiempoController {
         user: nombre[0],
         tiempoTotal,
         proyectos,
+      }
+    };
+  }
+
+  @get('/tiempos/{fecha_inicio}/{fecha_fin}', {
+    responses: {
+      '200': {
+        description: 'tiempo total por usuario',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'array',
+            },
+          },
+        },
+      },
+    },
+  })
+  async findTiempor(
+    @param.path.string('fecha_inicio') fecha_inicio: string,
+    @param.path.string('fecha_fin') fecha_fin: string,
+    @param.query.object('filter', getFilterSchemaFor(Usuario)) filter?: Filter<Usuario>,
+  ): Promise<{}> {
+    const fechaInicio = moment(fecha_inicio);
+    const fechaFin = moment(fecha_fin);
+
+    const usuarios = await this.usuarioRepository.find(filter);
+    const userIds = usuarios.map(item => item.id);
+
+    const timeposList = await this.tiempoRepository.find({
+      where: {
+        usuario_id: {
+          inq: userIds
+        },
+      },
+    });
+
+    const tiemposFiltrados = timeposList.filter(item =>
+      moment(item.fecha) >= fechaInicio && moment(item.fecha) <= fechaFin
+    );
+
+    const duration = tiemposFiltrados.map(item => {
+      const horaIni = moment(item.hora_inicio, "HH:mm:ss");
+      const horaFin = moment(item.hora_fin, "HH:mm:ss");
+
+      const diff = horaFin.diff(horaIni);
+      return {
+        horasTabajadas: moment.utc(diff).format("HH:mm"),
+        usuario_id: item.usuario_id
+      }
+    })
+
+    const detalleDuration: any[] = [];
+    const userIdsList: number[] = [];
+    duration.forEach(item => {
+      const user = item.usuario_id;
+      const indexUser = userIdsList.indexOf(user);
+      if (indexUser === -1) {
+        detalleDuration.push(item)
+        userIdsList.push(user);
+      } else {
+        let indexDetail = 0;
+        let time = '';
+        detalleDuration.forEach((el, idx) => {
+          if (el.usuario_id === user) {
+            indexDetail = idx;
+            time = el.horasTabajadas
+          }
+        })
+        time = moment(time, "HH:mm") + moment.utc(item.horasTabajadas, "HH:mm")
+        time = moment(time).format("HH:mm");
+        detalleDuration.splice(indexDetail, 1)
+        detalleDuration.push({ horasTabajadas: time, usuario_id: user })
+      }
+    })
+
+    const listaUsuarios = usuarios.map(userItem => {
+      const idUser = userItem.id;
+      let response = {};
+      detalleDuration.forEach(dur => {
+        if (idUser === dur.usuario_id) {
+          response = { horasTabajadas: dur.horasTabajadas, nombreUsuario: userItem.nombre }
+        }
+      })
+      if (Object.keys(response).length === 0) {
+        response = { horasTabajadas: 0, nombreUsuario: userItem.nombre }
+      }
+      return response;
+    })
+
+    return {
+      statusCode: 200,
+      response: {
+        listaUsuarios,
       }
     };
   }
