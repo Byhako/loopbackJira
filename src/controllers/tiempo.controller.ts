@@ -8,18 +8,18 @@ import {
   get,
   getFilterSchemaFor,
   getModelSchemaRef,
-  getWhereSchemaFor,
-  requestBody,
 } from '@loopback/rest';
 import { Tiempo } from '../models';
 import moment from 'moment-with-locales-es6';
 
-import { TiempoRepository } from '../repositories';
+import { TiempoRepository, UsuarioRepository } from '../repositories';
 
 export class TiempoController {
   constructor(
     @repository(TiempoRepository)
     public tiempoRepository: TiempoRepository,
+    @repository(UsuarioRepository)
+    public usuarioRepository: UsuarioRepository,
   ) { }
 
   @get('/tiempos', {
@@ -68,12 +68,17 @@ export class TiempoController {
     const fechaInicio = moment(fecha_inicio).date();
     const fechaFin = moment(fecha_fin);
 
-    const usuarios = await this.tiempoRepository.find({
+    const usuariosTimer = await this.tiempoRepository.find({
       where: { usuario_id: usuario_id },
     });
 
+    const usuario = await this.usuarioRepository.find({
+      where: { id: usuario_id },
+    });
+    const nombre = usuario.map(item => item.nombre);
+
     // console.log(usuarios)
-    const users = usuarios.filter(item =>
+    const users = usuariosTimer.filter(item =>
       moment(item.fecha) >= fechaInicio && moment(item.fecha) <= fechaFin
     );
 
@@ -89,7 +94,7 @@ export class TiempoController {
     durations.forEach((d, idx) => {
       const obj = {
         duracion: d,
-        usuario_id: users[idx].usuario_id,
+        usuario: nombre,
         issue_id: users[idx].issue_id
       };
       detalleLogs.push(obj);
