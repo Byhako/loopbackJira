@@ -68,7 +68,7 @@ export class TiempoController {
     @param.path.string('fecha_fin') fecha_fin: string,
     // @param.query.object('filter', getFilterSchemaFor(Tiempo)) filter?: Filter<Tiempo>,
   ): Promise<{}> {
-    const fechaInicio = moment(fecha_inicio);
+    const fechaInicio = moment(fecha_inicio).date();
     const fechaFin = moment(fecha_fin);
 
     // detalles de usuario
@@ -81,6 +81,7 @@ export class TiempoController {
     const usuariosTimer = await this.tiempoRepository.find({
       where: { usuario_id: usuario_id },
     });
+
 
     const users = usuariosTimer.filter(item =>
       moment(item.fecha) >= fechaInicio && moment(item.fecha) <= fechaFin
@@ -190,7 +191,7 @@ export class TiempoController {
     @param.path.string('fecha_fin') fecha_fin: string,
     @param.query.object('filter', getFilterSchemaFor(Usuario)) filter?: Filter<Usuario>,
   ): Promise<{}> {
-    const fechaInicio = moment(fecha_inicio);
+    const fechaInicio = moment(fecha_inicio).date();
     const fechaFin = moment(fecha_fin);
 
     const usuarios = await this.usuarioRepository.find(filter);
