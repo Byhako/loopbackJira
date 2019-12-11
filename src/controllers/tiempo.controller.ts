@@ -12,7 +12,7 @@ import {
 import { Tiempo } from '../models';
 import moment from 'moment-with-locales-es6';
 
-import { TiempoRepository, UsuarioRepository } from '../repositories';
+import { TiempoRepository, UsuarioRepository, ProyectoRepository, IssueRepository } from '../repositories';
 
 export class TiempoController {
   constructor(
@@ -20,6 +20,10 @@ export class TiempoController {
     public tiempoRepository: TiempoRepository,
     @repository(UsuarioRepository)
     public usuarioRepository: UsuarioRepository,
+    @repository(IssueRepository)
+    public issueRepository: IssueRepository,
+    @repository(ProyectoRepository)
+    public proyectoRepository: ProyectoRepository,
   ) { }
 
   @get('/tiempos', {
@@ -64,51 +68,106 @@ export class TiempoController {
     @param.path.string('fecha_fin') fecha_fin: string,
     // @param.query.object('filter', getFilterSchemaFor(Tiempo)) filter?: Filter<Tiempo>,
   ): Promise<{}> {
-    // return this.tiempoRepository.find(filter);
     const fechaInicio = moment(fecha_inicio).date();
     const fechaFin = moment(fecha_fin);
 
-    const usuariosTimer = await this.tiempoRepository.find({
-      where: { usuario_id: usuario_id },
-    });
-
+    // detalles de usuario
     const usuario = await this.usuarioRepository.find({
       where: { id: usuario_id },
     });
     const nombre = usuario.map(item => item.nombre);
 
-    // console.log(usuarios)
+    // tiempo por cada issue
+    const usuariosTimer = await this.tiempoRepository.find({
+      where: { usuario_id: usuario_id },
+    });
+
     const users = usuariosTimer.filter(item =>
       moment(item.fecha) >= fechaInicio && moment(item.fecha) <= fechaFin
     );
 
-    const durations = users.map(item => {
+    let tiempoTotal = moment('00:00:00', "HH:mm:ss");
+    const detalleLogs = users.map(item => {
       const horaIni = moment(item.hora_inicio, "HH:mm:ss");
       const horaFin = moment(item.hora_fin, "HH:mm:ss");
 
       const diff = horaFin.diff(horaIni);
-      return moment.utc(diff).format("HH:mm");
+      tiempoTotal = tiempoTotal + diff;
+      return {
+        horasTabajadas: moment.utc(diff).format("HH:mm"),
+        issue_id: item.issue_id
+      }
+    })
+    tiempoTotal = moment(tiempoTotal).format("HH:mm");
+
+    const detalleLogsSum: any[] = [];
+    const issuesIds: number[] = [];
+    detalleLogs.forEach(item => {
+      const issue = item.issue_id;
+      const indexIssue = issuesIds.indexOf(issue);
+      if (indexIssue === -1) {
+        detalleLogsSum.push(item)
+        issuesIds.push(issue);
+      } else {
+        let indexDetail = 0;
+        let time = '';
+        detalleLogsSum.forEach((el, idx) => {
+          if (el.issue_id === issue) {
+            indexDetail = idx;
+            time = el.horasTabajadas
+          }
+        })
+        time = moment(time, "HH:mm") + moment.utc(item.horasTabajadas, "HH:mm")
+        time = moment(time).format("HH:mm");
+        detalleLogsSum.splice(indexDetail, 1)
+        detalleLogsSum.push({ horasTabajadas: time, issue_id: issue })
+      }
     })
 
-    const detalleLogs: object[] = [];
-    durations.forEach((d, idx) => {
-      const obj = {
-        duracion: d,
-        usuario: nombre,
-        issue_id: users[idx].issue_id
-      };
-      detalleLogs.push(obj);
+    const issuesList = await this.issueRepository.find({
+      where: {
+        id: {
+          inq: issuesIds
+        },
+      },
+    });
+    const proyectosIds = issuesList.map(item => item.proyecto_id)
+
+    detalleLogsSum.forEach((item, idx) => {
+      const issueId = item.issue_id;
+      issuesList.forEach(is => {
+        if (issueId === is.id) {
+          detalleLogsSum[idx].proyecto_id = is.proyecto_id;
+        }
+      })
     })
 
+    const proyectosList = await this.proyectoRepository.find({
+      where: {
+        id: {
+          inq: proyectosIds
+        },
+      },
+    });
 
-    console.log(detalleLogs)
-
+    const proyectos = detalleLogsSum.map(item => {
+      const proyectId = item.proyecto_id;
+      let proyecItem = {};
+      proyectosList.forEach(pl => {
+        if (proyectId === pl.id) {
+          proyecItem = { horasTabajadas: item.horasTabajadas, nombreProyecto: pl.nombre };
+        }
+      })
+      return proyecItem;
+    })
 
     return {
       statusCode: 200,
-      user: usuario_id,
-      fecha_inicio: fecha_inicio,
-      fecha_fin: fecha_fin
+      response: {
+        user: nombre[0],
+        tiempoTotal,
+        proyectos,
+      }
     };
   }
 }
