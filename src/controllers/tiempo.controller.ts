@@ -68,8 +68,8 @@ export class TiempoController {
     @param.path.string('fecha_fin') fecha_fin: string,
     // @param.query.object('filter', getFilterSchemaFor(Tiempo)) filter?: Filter<Tiempo>,
   ): Promise<{}> {
-    const fechaInicio = moment(fecha_inicio).date();
-    const fechaFin = moment(fecha_fin);
+    const fechaInicio = moment.utc(fecha_inicio).format("YYYY:MM:DD");
+    const fechaFin = moment.utc(fecha_fin).format("YYYY:MM:DD");
 
     // detalles de usuario
     const usuario = await this.usuarioRepository.find({
@@ -84,7 +84,7 @@ export class TiempoController {
 
 
     const users = usuariosTimer.filter(item =>
-      moment(item.fecha) >= fechaInicio && moment(item.fecha) <= fechaFin
+      moment.utc(item.fecha).format("YYYY:MM:DD") >= fechaInicio && moment.utc(item.fecha).format("YYYY:MM:DD") <= fechaFin
     );
 
     let tiempoTotal = moment('00:00:00', "HH:mm:ss");
@@ -191,8 +191,8 @@ export class TiempoController {
     @param.path.string('fecha_fin') fecha_fin: string,
     @param.query.object('filter', getFilterSchemaFor(Usuario)) filter?: Filter<Usuario>,
   ): Promise<{}> {
-    const fechaInicio = moment(fecha_inicio).date();
-    const fechaFin = moment(fecha_fin);
+    const fechaInicio = moment.utc(fecha_inicio).format("YYYY:MM:DD");
+    const fechaFin = moment.utc(fecha_fin).format("YYYY:MM:DD");
 
     const usuarios = await this.usuarioRepository.find(filter);
     const userIds = usuarios.map(item => item.id);
@@ -206,7 +206,7 @@ export class TiempoController {
     });
 
     const tiemposFiltrados = timeposList.filter(item =>
-      moment(item.fecha) >= fechaInicio && moment(item.fecha) <= fechaFin
+      moment.utc(item.fecha).format("YYYY:MM:DD") >= fechaInicio && moment.utc(item.fecha).format("YYYY:MM:DD") <= fechaFin
     );
 
     const duration = tiemposFiltrados.map(item => {
