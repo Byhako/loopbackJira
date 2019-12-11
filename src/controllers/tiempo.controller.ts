@@ -252,7 +252,7 @@ export class TiempoController {
         }
       })
       if (Object.keys(response).length === 0) {
-        response = { horasTabajadas: 0, nombreUsuario: userItem.nombre }
+        response = { horasTrabajadas: 0, nombreUsuario: userItem.nombre }
       }
       return response;
     })
