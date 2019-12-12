@@ -1,7 +1,7 @@
-import {BackApplication} from './application';
-import {ApplicationConfig} from '@loopback/core';
+import { BackApplication } from './application';
+import { ApplicationConfig } from '@loopback/core';
 
-export {BackApplication};
+export { BackApplication };
 
 export async function main(options: ApplicationConfig = {}) {
   const app = new BackApplication(options);
@@ -10,7 +10,6 @@ export async function main(options: ApplicationConfig = {}) {
 
   const url = app.restServer.url;
   console.log(`Server is running at ${url}`);
-  console.log(`Try ${url}/ping`);
 
   return app;
 }
