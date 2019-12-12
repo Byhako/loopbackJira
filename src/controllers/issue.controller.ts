@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/camelcase */
 import {
   Filter,
   repository,
@@ -13,7 +14,7 @@ import {
   requestBody,
 } from '@loopback/rest';
 import { Issue } from '../models';
-import { IssueRepository, ProyectoRepository } from '../repositories';
+import { IssueRepository, ProyectoRepository, TiempoRepository } from '../repositories';
 
 
 export class IssueController {
@@ -22,6 +23,8 @@ export class IssueController {
     public issueRepository: IssueRepository,
     @repository(ProyectoRepository)
     public proyectoRepository: ProyectoRepository,
+    @repository(TiempoRepository)
+    public tiempoRepository: TiempoRepository,
   ) { }
 
   @post('/issues', {
@@ -152,6 +155,44 @@ export class IssueController {
     return {
       statusCode: 403,
       response: 'This id of isssue is incorrect',
+    }
+  }
+
+  @del('/issues/{id}', {
+    responses: {
+      '204': {
+        description: 'Issue delete',
+      },
+    },
+  })
+  async delete(@param.path.number('id') id: number): Promise<{}> {
+    const exist = await this.issueRepository.findOne({
+      where: { id },
+    });
+    if (exist) {
+      const tiempos = await this.tiempoRepository.find({
+        where: { issue_id: id },
+      });
+
+      // Get list ids of tiempos
+      const tiempoIds = tiempos.map(item => item.id);
+
+      await this.tiempoRepository.deleteAll({
+        id: {
+          inq: tiempoIds,
+        },
+      });
+
+      await this.issueRepository.deleteById(id);
+
+      return {
+        statusCode: 200,
+        response: 'The issue was successfully removed'
+      }
+    }
+    return {
+      statusCode: 403,
+      response: 'The issue not exist',
     }
   }
 }
