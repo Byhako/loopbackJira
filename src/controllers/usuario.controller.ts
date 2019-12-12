@@ -46,10 +46,10 @@ export class UsuarioController {
     usuario: Omit<Usuario, 'id'>,
   ): Promise<{}> {
     const username = usuario.username;
-    const exist = await this.usuarioRepository.find({
+    const exist = await this.usuarioRepository.findOne({
       where: { username },
     });
-    if (exist.length) {
+    if (exist) {
       return {
         statusCode: 403,
         response: 'This username already exists',
@@ -161,23 +161,33 @@ export class UsuarioController {
     },
   })
   async delete(@param.path.number('id') id: number): Promise<{}> {
-    const tiempos = await this.tiempoRepository.find({
-      where: { usuario_id: id },
+    const exist = await this.usuarioRepository.findOne({
+      where: { id },
     });
+    if (exist) {
+      const tiempos = await this.tiempoRepository.find({
+        where: { usuario_id: id },
+      });
 
-    const tiempoIds = tiempos.map(item => item.id);
+      const tiempoIds = tiempos.map(item => item.id);
 
-    await this.tiempoRepository.deleteAll({
-      id: {
-        inq: tiempoIds,
-      },
-    });
+      await this.tiempoRepository.deleteAll({
+        id: {
+          inq: tiempoIds,
+        },
+      });
 
-    await this.usuarioRepository.deleteById(id);
+      await this.usuarioRepository.deleteById(id);
 
-    return {
-      statusCode: 200,
-      response: 'Success'
+      return {
+        statusCode: 200,
+        response: 'The user was successfully removed'
+      }
+    } else {
+      return {
+        statusCode: 403,
+        response: 'The user not exist',
+      }
     }
   }
 }
