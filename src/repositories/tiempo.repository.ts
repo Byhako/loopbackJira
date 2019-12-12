@@ -16,10 +16,10 @@ export class TiempoRepository extends DefaultCrudRepository<
 }
 
 
-export type SetExpirationBody = {
+export type TimeBody = {
   usuario_id: number,
   issue_id: number,
-  log: number,
+  log: string,
   fecha: string,
   hora_inicio: string,
   hora_fin: string

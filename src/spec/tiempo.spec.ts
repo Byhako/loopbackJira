@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/camelcase */
-const SetExpirationInputSchema = {
+const TimeSchema = {
   type: 'object',
   required: ['usuario_id', 'issue_id', 'log', 'fecha', 'hora_inicio', 'hora_fin'],
   properties: {
     usuario_id: {
       type: 'number',
     },
-    isuse_id: {
+    issue_id: {
       type: 'number',
     },
     log: {
@@ -18,18 +18,18 @@ const SetExpirationInputSchema = {
     },
     hora_inicio: {
       type: 'string',
-      format: 'time',
+      // format: 'time',
     },
     hora_fin: {
       type: 'string',
-      format: 'time',
+      // format: 'time',
     },
   },
 };
-export const SetExpirationBodySpecs = {
-  description: 'Set an expiration date for a license',
+export const TimeBodySpecs = {
+  description: 'lsdnfidi',
   required: true,
   content: {
-    'application/json': { schema: SetExpirationInputSchema },
+    'application/json': { schema: TimeSchema },
   },
 };

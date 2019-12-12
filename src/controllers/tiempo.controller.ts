@@ -11,9 +11,9 @@ import {
 } from '@loopback/rest';
 import moment from 'moment-with-locales-es6';
 
-import { TiempoRepository, UsuarioRepository, ProyectoRepository, IssueRepository, SetExpirationBody } from '../repositories';
+import { TiempoRepository, UsuarioRepository, ProyectoRepository, IssueRepository, TimeBody } from '../repositories';
 import { Tiempo } from '../models/tiempo.model';
-import { SetExpirationBodySpecs } from '../spec/tiempo.spec';
+import { TimeBodySpecs } from '../spec/tiempo.spec';
 
 export class TiempoController {
   constructor(
@@ -45,8 +45,8 @@ export class TiempoController {
   })
   async findProyects(
     @param.path.number('usuario_id') usuario_id: number,
-    @param.path.string('fecha_inicio') fecha_inicio: string,
-    @param.path.string('fecha_fin') fecha_fin: string,
+    @param.path.date('fecha_inicio') fecha_inicio: string,
+    @param.path.date('fecha_fin') fecha_fin: string,
     // @param.query.object('filter', getFilterSchemaFor(Tiempo)) filter?: Filter<Tiempo>,
   ): Promise<{}> {
     const usuario = await this.usuarioRepository.findOne({
@@ -174,8 +174,8 @@ export class TiempoController {
     },
   })
   async findTiempor(
-    @param.path.string('fecha_inicio') fecha_inicio: string,
-    @param.path.string('fecha_fin') fecha_fin: string,
+    @param.path.date('fecha_inicio') fecha_inicio: string,
+    @param.path.date('fecha_fin') fecha_fin: string,
   ): Promise<{}> {
     const fechaInicio = moment.utc(fecha_inicio);
     const fechaFin = moment.utc(fecha_fin);
@@ -256,15 +256,20 @@ export class TiempoController {
     },
   })
   async create(
-    @requestBody(SetExpirationBodySpecs)
-    tiempo: SetExpirationBody
+    @requestBody(TimeBodySpecs)
+    tiempoBody: TimeBody
   ): Promise<{}> {
+    const tiempo = new Tiempo({
+      ...tiempoBody
+    });
+
     const existUser = await this.usuarioRepository.findOne({
       where: { id: tiempo.usuario_id },
     });
     const existIssue = await this.issueRepository.findOne({
       where: { id: tiempo.issue_id },
     });
+
     if (existIssue && existUser) {
       await this.tiempoRepository.create(tiempo);
       return {
