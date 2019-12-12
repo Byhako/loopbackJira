@@ -27,6 +27,9 @@ export class Issue extends Entity {
   })
   proyecto_id: number;
 
+  // @belongsTo(() => Proyecto)
+  // proyecto_id?: number;
+
 
   constructor(data?: Partial<Issue>) {
     super(data);

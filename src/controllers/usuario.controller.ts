@@ -1,9 +1,7 @@
+/* eslint-disable @typescript-eslint/camelcase */
 import {
-  Count,
-  CountSchema,
   Filter,
   repository,
-  Where,
 } from '@loopback/repository';
 import {
   post,
@@ -11,7 +9,6 @@ import {
   get,
   getFilterSchemaFor,
   getModelSchemaRef,
-  getWhereSchemaFor,
   put,
   del,
   requestBody,
@@ -48,25 +45,22 @@ export class UsuarioController {
     })
     usuario: Omit<Usuario, 'id'>,
   ): Promise<{}> {
-    await this.usuarioRepository.create(usuario);
-    return {
-      statusCode: 200,
-      response: 'El usuario fue creado correctamente'
+    const username = usuario.username;
+    const exist = await this.usuarioRepository.find({
+      where: { username },
+    });
+    if (exist.length) {
+      return {
+        statusCode: 403,
+        response: 'This username already exists',
+      }
+    } else {
+      await this.usuarioRepository.create(usuario);
+      return {
+        statusCode: 200,
+        response: 'The user was created successfully',
+      }
     }
-  }
-
-  @get('/usuarios/count', {
-    responses: {
-      '200': {
-        description: 'Usuario model count',
-        content: { 'application/json': { schema: CountSchema } },
-      },
-    },
-  })
-  async count(
-    @param.query.object('where', getWhereSchemaFor(Usuario)) where?: Where<Usuario>,
-  ): Promise<Count> {
-    return this.usuarioRepository.count(where);
   }
 
   @get('/usuarios', {
@@ -124,10 +118,38 @@ export class UsuarioController {
     @param.path.number('id') id: number,
     @requestBody() usuario: Usuario,
   ): Promise<{}> {
-    await this.usuarioRepository.replaceById(id, usuario);
-    return {
-      statusCode: 200,
-      response: 'El usuario fue editado correctamente'
+    const username = usuario.username;
+    const exist = await this.usuarioRepository.findOne({
+      where: { username },
+    });
+    const own = await this.usuarioRepository.findOne({
+      where: {
+        and: [
+          { username },
+          { id }
+        ]
+      },
+    });
+
+    if (!exist) {
+      await this.usuarioRepository.replaceById(id, usuario);
+      return {
+        statusCode: 200,
+        response: 'The user was edited correctly'
+      }
+    } else {
+      if (own) {
+        await this.usuarioRepository.replaceById(id, usuario);
+        return {
+          statusCode: 200,
+          response: 'The user was edited correctly'
+        }
+      } else {
+        return {
+          statusCode: 403,
+          response: 'This username is incorrect',
+        }
+      }
     }
   }
 
