@@ -131,8 +131,17 @@ export class UsuarioController {
     },
   })
   async replaceById(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(Usuario, {
+            title: 'New User',
+            exclude: ['id'],
+          }),
+        },
+      },
+    }) usuario: Usuario,
     @param.path.number('id') id: number,
-    @requestBody() usuario: Usuario,
   ): Promise<{}> {
     const username = usuario.username;
     const exist = await this.usuarioRepository.findOne({

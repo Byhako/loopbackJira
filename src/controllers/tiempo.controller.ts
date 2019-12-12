@@ -1,18 +1,18 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import {
-  Filter,
   repository,
 } from '@loopback/repository';
 import {
   param,
   get,
-  getFilterSchemaFor,
+  post,
+  requestBody,
   getModelSchemaRef,
 } from '@loopback/rest';
-import { Tiempo, Usuario } from '../models';
 import moment from 'moment-with-locales-es6';
 
 import { TiempoRepository, UsuarioRepository, ProyectoRepository, IssueRepository } from '../repositories';
+import { Tiempo } from '../models/tiempo.model';
 
 export class TiempoController {
   constructor(
@@ -245,5 +245,44 @@ export class TiempoController {
         listaUsuarios,
       }
     };
+  }
+
+  @post('/tiempos', {
+    responses: {
+      '200': {
+        description: 'Usuario creado correctamente',
+      },
+    },
+  })
+  async create(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(Tiempo, {
+            title: 'New Time log',
+            exclude: ['id'],
+          }),
+        },
+      },
+    })
+    tiempo: Omit<Tiempo, 'id'>,
+  ): Promise<{}> {
+    const existUser = await this.usuarioRepository.findOne({
+      where: { id: tiempo.usuario_id },
+    });
+    const existIssue = await this.issueRepository.findOne({
+      where: { id: tiempo.issue_id },
+    });
+    if (existIssue && existUser) {
+      await this.tiempoRepository.create(tiempo);
+      return {
+        statusCode: 200,
+        response: 'The time log has been created',
+      }
+    }
+    return {
+      statusCode: 402,
+      response: 'The usuario_id or issue_id not exist',
+    }
   }
 }

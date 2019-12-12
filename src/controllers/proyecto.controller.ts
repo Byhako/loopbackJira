@@ -132,7 +132,7 @@ export class ProyectoController {
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(Proyecto, { partial: true }),
+          schema: getModelSchemaRef(Proyecto, { partial: true, exclude: ['id'], }),
         },
       },
     })
