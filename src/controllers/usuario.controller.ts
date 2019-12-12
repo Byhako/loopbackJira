@@ -103,8 +103,26 @@ export class UsuarioController {
   async findById(
     @param.path.number('id') id: number,
     @param.query.object('filter', getFilterSchemaFor(Usuario)) filter?: Filter<Usuario>
-  ): Promise<Usuario> {
-    return this.usuarioRepository.findById(id, filter);
+  ): Promise<{}> {
+    const exist = await this.usuarioRepository.findOne({
+      where: { id },
+    });
+    if (exist) {
+      const user = await this.usuarioRepository.findById(id, filter);
+      return {
+        statusCode: 200,
+        response: {
+          username: user.username,
+          nombre: user.nombre,
+          apellido: user.apellido
+        },
+      }
+    } else {
+      return {
+        statusCode: 403,
+        response: 'The user not exist',
+      }
+    }
   }
 
   @put('/usuarios/{id}', {
