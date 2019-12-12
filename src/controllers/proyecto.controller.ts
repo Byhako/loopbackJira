@@ -170,40 +170,49 @@ export class ProyectoController {
     },
   })
   async deleteById(@param.path.number('id') id: number): Promise<{}> {
-    const issues = await this.issueRepository.find({
-      where: { proyecto_id: id },
+    const exist = await this.proyectoRepository.findOne({
+      where: { id },
     });
-    const issuesIds = issues.map(item => item.id ? item.id : 0).filter(item => !!item);
+    if (exist) {
+      const issues = await this.issueRepository.find({
+        where: { proyecto_id: id },
+      });
+      const issuesIds = issues.map(item => item.id ? item.id : 0).filter(item => !!item);
 
-    const tiempos = await this.tiempoRepository.find({
-      where: {
-        issue_id: {
-          inq: issuesIds
+      const tiempos = await this.tiempoRepository.find({
+        where: {
+          issue_id: {
+            inq: issuesIds
+          },
         },
-      },
-    });
-    const tiemposIds = tiempos.map(item => item.id);
+      });
+      const tiemposIds = tiempos.map(item => item.id);
 
-    // delete in tiempos
-    await this.tiempoRepository.deleteAll({
-      id: {
-        inq: tiemposIds,
-      },
-    });
+      // delete in tiempos
+      await this.tiempoRepository.deleteAll({
+        id: {
+          inq: tiemposIds,
+        },
+      });
 
-    // delete in issue
-    await this.issueRepository.deleteAll({
-      id: {
-        inq: issuesIds,
-      },
-    });
+      // delete in issue
+      await this.issueRepository.deleteAll({
+        id: {
+          inq: issuesIds,
+        },
+      });
 
-    // delete in proyecto
-    await this.proyectoRepository.deleteById(id);
+      // delete in proyecto
+      await this.proyectoRepository.deleteById(id);
 
+      return {
+        statusCode: 200,
+        response: 'The proyect was successfully removed'
+      }
+    }
     return {
-      statusCode: 200,
-      response: 'Success'
+      statusCode: 403,
+      response: 'The proyect not exist',
     }
   }
 }
