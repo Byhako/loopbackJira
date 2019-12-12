@@ -175,25 +175,18 @@ export class TiempoController {
   async findTiempor(
     @param.path.string('fecha_inicio') fecha_inicio: string,
     @param.path.string('fecha_fin') fecha_fin: string,
-    @param.query.object('filter', getFilterSchemaFor(Usuario)) filter?: Filter<Usuario>,
   ): Promise<{}> {
-    const fechaInicio = moment.utc(fecha_inicio).format("YYYY:MM:DD");
-    const fechaFin = moment.utc(fecha_fin).format("YYYY:MM:DD");
+    const fechaInicio = moment.utc(fecha_inicio);
+    const fechaFin = moment.utc(fecha_fin);
 
-    const usuarios = await this.usuarioRepository.find(filter);
-    const userIds = usuarios.map(item => item.id);
-
-    const timeposList = await this.tiempoRepository.find({
+    const tiemposFiltrados = await this.tiempoRepository.find({
       where: {
-        usuario_id: {
-          inq: userIds
-        },
+        and: [
+          { fecha: { gte: fechaInicio } },
+          { fecha: { lte: fechaFin } }
+        ]
       },
     });
-
-    const tiemposFiltrados = timeposList.filter(item =>
-      moment.utc(item.fecha).format("YYYY:MM:DD") >= fechaInicio && moment.utc(item.fecha).format("YYYY:MM:DD") <= fechaFin
-    );
 
     const duration = tiemposFiltrados.map(item => {
       const horaIni = moment(item.hora_inicio, "HH:mm:ss");
@@ -201,7 +194,7 @@ export class TiempoController {
 
       const diff = horaFin.diff(horaIni);
       return {
-        horasTabajadas: moment.utc(diff).format("HH:mm"),
+        horas_trabajadas: moment.utc(diff).format("HH:mm"),
         usuario_id: item.usuario_id
       }
     })
@@ -220,26 +213,28 @@ export class TiempoController {
         detalleDuration.forEach((el, idx) => {
           if (el.usuario_id === user) {
             indexDetail = idx;
-            time = el.horasTabajadas
+            time = el.horas_trabajadas
           }
         })
-        time = moment(time, "HH:mm") + moment.utc(item.horasTabajadas, "HH:mm")
+        time = moment(time, "HH:mm") + moment.utc(item.horas_trabajadas, "HH:mm")
         time = moment(time).format("HH:mm");
         detalleDuration.splice(indexDetail, 1)
-        detalleDuration.push({ horasTabajadas: time, usuario_id: user })
+        detalleDuration.push({ horas_trabajadas: time, usuario_id: user })
       }
     })
+
+    const usuarios = await this.usuarioRepository.find();
 
     const listaUsuarios = usuarios.map(userItem => {
       const idUser = userItem.id;
       let response = {};
       detalleDuration.forEach(dur => {
         if (idUser === dur.usuario_id) {
-          response = { horasTabajadas: dur.horasTabajadas, nombreUsuario: userItem.nombre }
+          response = { horas_trabajadas: dur.horas_trabajadas, nombre_usuario: userItem.nombre }
         }
       })
       if (Object.keys(response).length === 0) {
-        response = { horasTrabajadas: 0, nombreUsuario: userItem.nombre }
+        response = { horas_trabajadas: 0, nombre_usuario: userItem.nombre }
       }
       return response;
     })
