@@ -54,12 +54,11 @@ export class UsuarioController {
         statusCode: 403,
         response: 'This username already exists',
       }
-    } else {
-      await this.usuarioRepository.create(usuario);
-      return {
-        statusCode: 200,
-        response: 'The user was created successfully',
-      }
+    }
+    await this.usuarioRepository.create(usuario);
+    return {
+      statusCode: 200,
+      response: 'The user was created successfully',
     }
   }
 
@@ -117,11 +116,10 @@ export class UsuarioController {
           apellido: user.apellido
         },
       }
-    } else {
-      return {
-        statusCode: 403,
-        response: 'The user not exist',
-      }
+    }
+    return {
+      statusCode: 403,
+      response: 'The user not exist',
     }
   }
 
@@ -155,19 +153,18 @@ export class UsuarioController {
         statusCode: 200,
         response: 'The user was edited correctly'
       }
-    } else {
-      if (own) {
-        await this.usuarioRepository.replaceById(id, usuario);
-        return {
-          statusCode: 200,
-          response: 'The user was edited correctly'
-        }
-      } else {
-        return {
-          statusCode: 403,
-          response: 'This username is incorrect',
-        }
+    }
+
+    if (own) {
+      await this.usuarioRepository.replaceById(id, usuario);
+      return {
+        statusCode: 200,
+        response: 'The user was edited correctly'
       }
+    }
+    return {
+      statusCode: 403,
+      response: 'This username is incorrect',
     }
   }
 
@@ -201,11 +198,10 @@ export class UsuarioController {
         statusCode: 200,
         response: 'The user was successfully removed'
       }
-    } else {
-      return {
-        statusCode: 403,
-        response: 'The user not exist',
-      }
+    }
+    return {
+      statusCode: 403,
+      response: 'The user not exist',
     }
   }
 }

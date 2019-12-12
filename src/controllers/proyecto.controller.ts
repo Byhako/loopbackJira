@@ -55,12 +55,11 @@ export class ProyectoController {
         statusCode: 403,
         response: 'Key incorrect. Use another'
       }
-    } else {
-      await this.proyectoRepository.create(proyecto);
-      return {
-        statusCode: 200,
-        response: 'The project was created successfully.'
-      }
+    }
+    await this.proyectoRepository.create(proyecto);
+    return {
+      statusCode: 200,
+      response: 'The project was created successfully.'
     }
   }
 
@@ -104,8 +103,21 @@ export class ProyectoController {
   async findById(
     @param.path.number('id') id: number,
     @param.query.object('filter', getFilterSchemaFor(Proyecto)) filter?: Filter<Proyecto>
-  ): Promise<Proyecto> {
-    return this.proyectoRepository.findById(id, filter);
+  ): Promise<{}> {
+    const exist = await this.proyectoRepository.findOne({
+      where: { id },
+    });
+    if (exist) {
+      const proyecto = await this.proyectoRepository.findById(id, filter);
+      return {
+        statusCode: 200,
+        response: proyecto,
+      }
+    }
+    return {
+      statusCode: 403,
+      response: 'The proyect not exist',
+    }
   }
 
   @patch('/proyectos/{id}', {
@@ -126,11 +138,28 @@ export class ProyectoController {
     })
     proyecto: Proyecto,
   ): Promise<{}> {
-    await this.proyectoRepository.updateById(id, proyecto);
-    return {
-      statusCode: 200,
-      response: 'El proyecto fue editado correctamente'
+    const exist = await this.proyectoRepository.findOne({
+      where: { id },
+    });
+
+    if (exist) {
+      if (exist.key !== proyecto.key) {
+        return {
+          statusCode: 403,
+          response: 'The key cannot be edited',
+        }
+      }
+      await this.proyectoRepository.updateById(id, proyecto);
+      return {
+        statusCode: 200,
+        response: 'The project was edited correctly',
+      }
     }
+    return {
+      statusCode: 403,
+      response: 'The proyect not exist',
+    }
+
   }
 
   @del('/proyectos/{id}', {
