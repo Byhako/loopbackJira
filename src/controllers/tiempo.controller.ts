@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/camelcase */
 import {
   repository,
@@ -7,7 +8,6 @@ import {
   get,
   post,
   requestBody,
-  getModelSchemaRef,
 } from '@loopback/rest';
 import moment from 'moment-with-locales-es6';
 
