@@ -11,8 +11,9 @@ import {
 } from '@loopback/rest';
 import moment from 'moment-with-locales-es6';
 
-import { TiempoRepository, UsuarioRepository, ProyectoRepository, IssueRepository } from '../repositories';
+import { TiempoRepository, UsuarioRepository, ProyectoRepository, IssueRepository, SetExpirationBody } from '../repositories';
 import { Tiempo } from '../models/tiempo.model';
+import { SetExpirationBodySpecs } from '../spec/tiempo.spec';
 
 export class TiempoController {
   constructor(
@@ -255,17 +256,8 @@ export class TiempoController {
     },
   })
   async create(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(Tiempo, {
-            title: 'New Time log',
-            exclude: ['id'],
-          }),
-        },
-      },
-    })
-    tiempo: Omit<Tiempo, 'id'>,
+    @requestBody(SetExpirationBodySpecs)
+    tiempo: SetExpirationBody
   ): Promise<{}> {
     const existUser = await this.usuarioRepository.findOne({
       where: { id: tiempo.usuario_id },

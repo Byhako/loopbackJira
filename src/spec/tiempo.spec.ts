@@ -1,13 +1,28 @@
+/* eslint-disable @typescript-eslint/camelcase */
 const SetExpirationInputSchema = {
   type: 'object',
-  required: ['account_license_id', 'expiration_date'],
+  required: ['usuario_id', 'issue_id', 'log', 'fecha', 'hora_inicio', 'hora_fin'],
   properties: {
-    account_license_id: {
+    usuario_id: {
       type: 'number',
     },
-    expiration_date: {
+    isuse_id: {
+      type: 'number',
+    },
+    log: {
+      type: 'string',
+    },
+    fecha: {
       type: 'string',
       format: 'date',
+    },
+    hora_inicio: {
+      type: 'string',
+      format: 'time',
+    },
+    hora_fin: {
+      type: 'string',
+      format: 'time',
     },
   },
 };
