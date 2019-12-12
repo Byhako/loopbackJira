@@ -47,10 +47,20 @@ export class ProyectoController {
     })
     proyecto: Omit<Proyecto, 'id'>,
   ): Promise<{}> {
-    await this.proyectoRepository.create(proyecto);
-    return {
-      statusCode: 200,
-      response: 'El proyecto fue creado correctamente'
+    const exist = await this.proyectoRepository.findOne({
+      where: { key: proyecto.key }
+    });
+    if (exist) {
+      return {
+        statusCode: 403,
+        response: 'Key incorrect. Use another'
+      }
+    } else {
+      await this.proyectoRepository.create(proyecto);
+      return {
+        statusCode: 200,
+        response: 'The project was created successfully.'
+      }
     }
   }
 
