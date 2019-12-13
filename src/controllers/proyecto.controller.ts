@@ -12,7 +12,8 @@ import {
   requestBody,
 } from '@loopback/rest';
 import { Proyecto } from '../models';
-import { ProyectoRepository, IssueRepository, TiempoRepository } from '../repositories';
+import { ProyectoRepository, IssueRepository, TiempoRepository, ProyectBody } from '../repositories';
+import { ProyectSpec } from '../spec/proyecto.spec';
 
 export class ProyectoController {
   constructor(
@@ -125,26 +126,16 @@ export class ProyectoController {
   })
   async updateById(
     @param.path.number('id') id: number,
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(Proyecto, { partial: true, exclude: ['id'], }),
-        },
-      },
-    })
-    proyecto: Proyecto,
+    @requestBody(ProyectSpec)
+    proyectBody: ProyectBody
   ): Promise<{}> {
     const exist = await this.proyectoRepository.findOne({
       where: { id },
     });
 
     if (exist) {
-      if (exist.key !== proyecto.key) {
-        return {
-          statusCode: 403,
-          response: 'The key cannot be edited',
-        }
-      }
+      const proyecto = new Proyecto({ ...proyectBody });
+
       await this.proyectoRepository.updateById(id, proyecto);
       return {
         statusCode: 200,
