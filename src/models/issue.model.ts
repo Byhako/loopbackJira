@@ -22,7 +22,7 @@ export class Issue extends Entity {
   })
   descripcion: string;
 
-  @belongsTo(() => Proyecto)
+  @belongsTo(() => Proyecto, { name: 'proyecto' })
   proyecto_id: number;
 
 

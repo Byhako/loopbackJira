@@ -79,7 +79,7 @@ export class IssueController {
   })
   async find(
   ): Promise<{}> {
-    const listIssues = await this.issueRepository.find();
+    const listIssues = await this.issueRepository.find({ include: [{ relation: 'proyecto' }] });
     return {
       statusCode: 200,
       response: listIssues
