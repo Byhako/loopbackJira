@@ -11,9 +11,9 @@ import {
 } from '@loopback/rest';
 import moment from 'moment-with-locales-es6';
 
-import { TiempoRepository, UsuarioRepository, ProyectoRepository, IssueRepository, TimeBody } from '../repositories';
+import { TiempoRepository, UsuarioRepository, ProyectoRepository, IssueRepository, TimeBody, TimeBodyMultiple } from '../repositories';
 import { Tiempo } from '../models/tiempo.model';
-import { TimeBodySpecs } from '../spec/tiempo.spec';
+import { TimeBodySpecs, TimeBodySpecsMultiple } from '../spec/tiempo.spec';
 
 export class TiempoController {
   constructor(
@@ -271,7 +271,8 @@ export class TiempoController {
     });
 
     if (existIssue && existUser) {
-      await this.tiempoRepository.create(tiempo);
+      console.log(tiempo)
+      // await this.tiempoRepository.create(tiempo);
       return {
         statusCode: 200,
         response: 'The time log has been created',
@@ -280,6 +281,62 @@ export class TiempoController {
     return {
       statusCode: 402,
       response: 'The usuario_id or issue_id not exist',
+    }
+  }
+
+  @post('/tiempos/multiple', {
+    responses: {
+      '200': {
+        description: 'Usuario creado correctamente',
+      },
+    },
+  })
+  async createMultiple(
+    @requestBody(TimeBodySpecsMultiple)
+    tiempoBody: TimeBodyMultiple
+  ): Promise<{}> {
+    const listUsuariosId: number[] = [];
+    const listIssueId: number[] = [];
+
+    tiempoBody.logs.forEach(item => {
+      listUsuariosId.push(item.usuario_id);
+      listIssueId.push(item.issue_id);
+    });
+
+    const setUsuarios = new Set(listUsuariosId);
+    const setIssues = new Set(listIssueId);
+
+    const userId: number[] = [];
+    const issueId: number[] = [];
+
+    setUsuarios.forEach(item => userId.push(item));
+    setIssues.forEach(item => issueId.push(item));
+
+
+    const existUsers = await this.usuarioRepository.find({
+      where: { id: { inq: userId } }
+    });
+
+    const existIssues = await this.issueRepository.find({
+      where: { id: { inq: issueId } }
+    });
+
+
+    if (userId.length === existUsers.length && issueId.length === existIssues.length) {
+      const objeto = tiempoBody.logs.map(item => (
+        new Tiempo({ ...item })
+      ))
+      console.info(objeto[0])
+      await this.tiempoRepository.create(objeto[0]);
+      // await this.tiempoRepository.createAll(objeto);
+      return {
+        statusCode: 200,
+        response: tiempoBody
+      }
+    }
+    return {
+      statusCode: 402,
+      response: 'issue id or user id incorrect'
     }
   }
 }

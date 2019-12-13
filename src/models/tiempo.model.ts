@@ -1,4 +1,6 @@
-import { Entity, model, property } from '@loopback/repository';
+import { Entity, model, property, belongsTo } from '@loopback/repository';
+import { Usuario } from './usuario.model';
+import { Issue } from './issue.model';
 
 @model()
 export class Tiempo extends Entity {
@@ -9,16 +11,16 @@ export class Tiempo extends Entity {
   })
   id?: number;
 
+  @belongsTo(() => Issue)
+  issue_id: number;
+
+  // @belongsTo(() => Usuario)
+  // usuario_id: number;
   @property({
     type: 'number',
     required: true,
   })
   usuario_id: number;
-  @property({
-    type: 'number',
-    required: true,
-  })
-  issue_id: number;
 
   @property({
     type: 'string',

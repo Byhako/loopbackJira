@@ -24,3 +24,7 @@ export type TimeBody = {
   hora_inicio: string,
   hora_fin: string
 };
+
+export type TimeBodyMultiple = {
+  logs: [TimeBody],
+};
