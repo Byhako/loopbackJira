@@ -127,36 +127,18 @@ export class TiempoController {
             inq: issuesIds
           },
         },
+        include: [{ relation: 'proyecto' }]
       });
-      const proyectosIds = issuesList.map(item => item.proyecto_id)
 
-      const proyectosList = await this.proyectoRepository.find({
-        where: {
-          id: {
-            inq: proyectosIds
-          },
-        },
-      });
+      const objectIssues = Object.assign(issuesList.map(item => item.toObject()))
 
       // I assign project id to each item of detail
       detailsLogs.forEach((item, idx) => {
-        const issueId = item.issue_id;
-        issuesList.forEach(is => {
-          if (issueId === is.id) {
-            detailsLogs[idx].proyecto_id = is.proyecto_id;
+        objectIssues.forEach((issue: any) => {
+          if (item.issue_id === issue.id) {
+            detailsLogs[idx].nombre_proyecto = issue.proyecto.nombre;
           }
         })
-      })
-
-      const proyectos = detailsLogs.map(item => {
-        const proyectId = item.proyecto_id;
-        let proyecItem = {};
-        proyectosList.forEach(pl => {
-          if (proyectId === pl.id) {
-            proyecItem = { horas_trabajadas: item.horas_trabajadas, nombre_proyecto: pl.nombre };
-          }
-        })
-        return proyecItem;
       })
 
       return {
@@ -164,7 +146,7 @@ export class TiempoController {
         response: {
           user: user.nombre,
           tiempo_total: tiempoTotal,
-          proyectos,
+          proyectos: detailsLogs,
         }
       };
     }
