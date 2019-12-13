@@ -1,13 +1,11 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import {
-  Filter,
   repository,
 } from '@loopback/repository';
 import {
   post,
   param,
   get,
-  getFilterSchemaFor,
   getModelSchemaRef,
   put,
   del,
@@ -78,9 +76,8 @@ export class UsuarioController {
     },
   })
   async find(
-    @param.query.object('filter', getFilterSchemaFor(Usuario)) filter?: Filter<Usuario>,
   ): Promise<{}> {
-    const listUsuarios = await this.usuarioRepository.find(filter);
+    const listUsuarios = await this.usuarioRepository.find();
     return {
       statusCode: 200,
       response: listUsuarios
@@ -101,13 +98,12 @@ export class UsuarioController {
   })
   async findById(
     @param.path.number('id') id: number,
-    @param.query.object('filter', getFilterSchemaFor(Usuario)) filter?: Filter<Usuario>
   ): Promise<{}> {
     const exist = await this.usuarioRepository.findOne({
       where: { id },
     });
     if (exist) {
-      const user = await this.usuarioRepository.findById(id, filter);
+      const user = await this.usuarioRepository.findById(id);
       return {
         statusCode: 200,
         response: {
@@ -189,15 +185,15 @@ export class UsuarioController {
       where: { id },
     });
     if (exist) {
-      const tiempos = await this.tiempoRepository.find({
+      const times = await this.tiempoRepository.find({
         where: { usuario_id: id },
       });
 
-      const tiempoIds = tiempos.map(item => item.id);
+      const timesIds = times.map(item => item.id);
 
       await this.tiempoRepository.deleteAll({
         id: {
-          inq: tiempoIds,
+          inq: timesIds,
         },
       });
 

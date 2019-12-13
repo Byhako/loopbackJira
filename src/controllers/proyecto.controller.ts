@@ -1,13 +1,11 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import {
-  Filter,
   repository,
 } from '@loopback/repository';
 import {
   post,
   param,
   get,
-  getFilterSchemaFor,
   getModelSchemaRef,
   patch,
   del,
@@ -79,12 +77,11 @@ export class ProyectoController {
     },
   })
   async find(
-    @param.query.object('filter', getFilterSchemaFor(Proyecto)) filter?: Filter<Proyecto>,
   ): Promise<{}> {
-    const listProyectos = await this.proyectoRepository.find(filter);
+    const listProyects = await this.proyectoRepository.find();
     return {
       statusCode: 200,
-      response: listProyectos
+      response: listProyects
     }
   }
 
@@ -102,16 +99,15 @@ export class ProyectoController {
   })
   async findById(
     @param.path.number('id') id: number,
-    @param.query.object('filter', getFilterSchemaFor(Proyecto)) filter?: Filter<Proyecto>
   ): Promise<{}> {
     const exist = await this.proyectoRepository.findOne({
       where: { id },
     });
     if (exist) {
-      const proyecto = await this.proyectoRepository.findById(id, filter);
+      const proyect = await this.proyectoRepository.findById(id);
       return {
         statusCode: 200,
-        response: proyecto,
+        response: proyect,
       }
     }
     return {
@@ -179,19 +175,19 @@ export class ProyectoController {
       });
       const issuesIds = issues.map(item => item.id ? item.id : 0).filter(item => !!item);
 
-      const tiempos = await this.tiempoRepository.find({
+      const times = await this.tiempoRepository.find({
         where: {
           issue_id: {
             inq: issuesIds
           },
         },
       });
-      const tiemposIds = tiempos.map(item => item.id);
+      const timesIds = times.map(item => item.id);
 
       // delete in tiempos
       await this.tiempoRepository.deleteAll({
         id: {
-          inq: tiemposIds,
+          inq: timesIds,
         },
       });
 

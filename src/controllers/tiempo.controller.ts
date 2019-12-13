@@ -95,7 +95,6 @@ export class TiempoController {
     @param.path.number('usuario_id') usuario_id: number,
     @param.path.date('fecha_inicio') fecha_inicio: string,
     @param.path.date('fecha_fin') fecha_fin: string,
-    // @param.query.object('filter', getFilterSchemaFor(Tiempo)) filter?: Filter<Tiempo>,
   ): Promise<{}> {
     const user = await this.usuarioRepository.findOne({
       where: { id: usuario_id },
