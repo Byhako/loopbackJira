@@ -11,15 +11,10 @@ export class Tiempo extends Entity {
   })
   id?: number;
 
-  @belongsTo(() => Issue)
+  @belongsTo(() => Issue, { name: 'issue' })
   issue_id: number;
 
-  // @belongsTo(() => Usuario)
-  // usuario_id: number;
-  @property({
-    type: 'number',
-    required: true,
-  })
+  @belongsTo(() => Usuario, { name: 'usuario' })
   usuario_id: number;
 
   @property({

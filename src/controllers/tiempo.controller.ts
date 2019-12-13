@@ -27,6 +27,12 @@ export class TiempoController {
     public proyectoRepository: ProyectoRepository,
   ) { }
 
+  noRepeatedItems = (array: number[]) => {
+    const set = new Set(array);
+    const list: number[] = [];
+    set.forEach(item => list.push(item));
+    return list;
+  };
 
   @get('/tiempos/{usuario_id}/{fecha_inicio}/{fecha_fin}', {
     responses: {
@@ -49,27 +55,27 @@ export class TiempoController {
     @param.path.date('fecha_fin') fecha_fin: string,
     // @param.query.object('filter', getFilterSchemaFor(Tiempo)) filter?: Filter<Tiempo>,
   ): Promise<{}> {
-    const usuario = await this.usuarioRepository.findOne({
+    const user = await this.usuarioRepository.findOne({
       where: { id: usuario_id },
     });
 
-    if (usuario) {
-      const fechaInicio = moment.utc(fecha_inicio);
-      const fechaFin = moment.utc(fecha_fin);
+    if (user) {
+      const dateStart = moment.utc(fecha_inicio);
+      const dateEnd = moment.utc(fecha_fin);
 
       // time of every user
       const users = await this.tiempoRepository.find({
         where: {
           and: [
             { usuario_id },
-            { fecha: { gte: fechaInicio } },
-            { fecha: { lte: fechaFin } }
+            { fecha: { gte: dateStart } },
+            { fecha: { lte: dateEnd } }
           ]
         },
       });
 
       let tiempoTotal = moment('00:00:00', "HH:mm:ss");
-      const detalleLogs = users.map(item => {
+      const detailsLogs = users.map(item => {
         const horaIni = moment(item.hora_inicio, "HH:mm:ss");
         const horaFin = moment(item.hora_fin, "HH:mm:ss");
 
@@ -83,18 +89,18 @@ export class TiempoController {
       tiempoTotal = moment(tiempoTotal).format("HH:mm");
 
       // I group the times of each issue
-      const detalleLogsSum: any[] = [];
+      const detailsLogsSum: any[] = [];
       const issuesIds: number[] = [];
-      detalleLogs.forEach(item => {
+      detailsLogs.forEach(item => {
         const issue = item.issue_id;
         const indexIssue = issuesIds.indexOf(issue);
         if (indexIssue === -1) {
-          detalleLogsSum.push(item)
+          detailsLogsSum.push(item)
           issuesIds.push(issue);
         } else {
           let indexDetail = 0;
           let time = '';
-          detalleLogsSum.forEach((el, idx) => {
+          detailsLogsSum.forEach((el, idx) => {
             if (el.issue_id === issue) {
               indexDetail = idx;
               time = el.horas_trabajadas
@@ -102,8 +108,8 @@ export class TiempoController {
           })
           time = moment(time, "HH:mm") + moment.utc(item.horas_trabajadas, "HH:mm")
           time = moment(time).format("HH:mm");
-          detalleLogsSum.splice(indexDetail, 1)
-          detalleLogsSum.push({ horas_trabajadas: time, issue_id: issue })
+          detailsLogsSum.splice(indexDetail, 1)
+          detailsLogsSum.push({ horas_trabajadas: time, issue_id: issue })
         }
       })
 
@@ -116,11 +122,11 @@ export class TiempoController {
       });
       const proyectosIds = issuesList.map(item => item.proyecto_id)
 
-      detalleLogsSum.forEach((item, idx) => {
+      detailsLogsSum.forEach((item, idx) => {
         const issueId = item.issue_id;
         issuesList.forEach(is => {
           if (issueId === is.id) {
-            detalleLogsSum[idx].proyecto_id = is.proyecto_id;
+            detailsLogsSum[idx].proyecto_id = is.proyecto_id;
           }
         })
       })
@@ -133,7 +139,7 @@ export class TiempoController {
         },
       });
 
-      const proyectos = detalleLogsSum.map(item => {
+      const proyectos = detailsLogsSum.map(item => {
         const proyectId = item.proyecto_id;
         let proyecItem = {};
         proyectosList.forEach(pl => {
@@ -147,7 +153,7 @@ export class TiempoController {
       return {
         statusCode: 200,
         response: {
-          user: usuario.nombre,
+          user: user.nombre,
           tiempo_total: tiempoTotal,
           proyectos,
         }
@@ -177,19 +183,19 @@ export class TiempoController {
     @param.path.date('fecha_inicio') fecha_inicio: string,
     @param.path.date('fecha_fin') fecha_fin: string,
   ): Promise<{}> {
-    const fechaInicio = moment.utc(fecha_inicio);
-    const fechaFin = moment.utc(fecha_fin);
+    const dateStart = moment.utc(fecha_inicio);
+    const dateEnd = moment.utc(fecha_fin);
 
-    const tiemposFiltrados = await this.tiempoRepository.find({
+    const filteredTimes = await this.tiempoRepository.find({
       where: {
         and: [
-          { fecha: { gte: fechaInicio } },
-          { fecha: { lte: fechaFin } }
+          { fecha: { gte: dateStart } },
+          { fecha: { lte: dateEnd } }
         ]
       },
     });
 
-    const duration = tiemposFiltrados.map(item => {
+    const duration = filteredTimes.map(item => {
       const horaIni = moment(item.hora_inicio, "HH:mm:ss");
       const horaFin = moment(item.hora_fin, "HH:mm:ss");
 
@@ -200,18 +206,18 @@ export class TiempoController {
       }
     })
 
-    const detalleDuration: any[] = [];
+    const detailDuration: any[] = [];
     const userIdsList: number[] = [];
     duration.forEach(item => {
       const user = item.usuario_id;
       const indexUser = userIdsList.indexOf(user);
       if (indexUser === -1) {
-        detalleDuration.push(item)
+        detailDuration.push(item)
         userIdsList.push(user);
       } else {
         let indexDetail = 0;
         let time = '';
-        detalleDuration.forEach((el, idx) => {
+        detailDuration.forEach((el, idx) => {
           if (el.usuario_id === user) {
             indexDetail = idx;
             time = el.horas_trabajadas
@@ -219,17 +225,17 @@ export class TiempoController {
         })
         time = moment(time, "HH:mm") + moment.utc(item.horas_trabajadas, "HH:mm")
         time = moment(time).format("HH:mm");
-        detalleDuration.splice(indexDetail, 1)
-        detalleDuration.push({ horas_trabajadas: time, usuario_id: user })
+        detailDuration.splice(indexDetail, 1)
+        detailDuration.push({ horas_trabajadas: time, usuario_id: user })
       }
     })
 
-    const usuarios = await this.usuarioRepository.find();
+    const users = await this.usuarioRepository.find();
 
-    const listaUsuarios = usuarios.map(userItem => {
+    const listaUsuarios = users.map(userItem => {
       const idUser = userItem.id;
       let response = {};
-      detalleDuration.forEach(dur => {
+      detailDuration.forEach(dur => {
         if (idUser === dur.usuario_id) {
           response = { horas_trabajadas: dur.horas_trabajadas, nombre_usuario: userItem.nombre }
         }
@@ -257,22 +263,21 @@ export class TiempoController {
   })
   async create(
     @requestBody(TimeBodySpecs)
-    tiempoBody: TimeBody
+    timeBody: TimeBody
   ): Promise<{}> {
-    const tiempo = new Tiempo({
-      ...tiempoBody
+    const time = new Tiempo({
+      ...timeBody
     });
 
     const existUser = await this.usuarioRepository.findOne({
-      where: { id: tiempo.usuario_id },
+      where: { id: time.usuario_id },
     });
     const existIssue = await this.issueRepository.findOne({
-      where: { id: tiempo.issue_id },
+      where: { id: time.issue_id },
     });
 
     if (existIssue && existUser) {
-      console.log(tiempo)
-      // await this.tiempoRepository.create(tiempo);
+      await this.tiempoRepository.create(time);
       return {
         statusCode: 200,
         response: 'The time log has been created',
@@ -293,45 +298,38 @@ export class TiempoController {
   })
   async createMultiple(
     @requestBody(TimeBodySpecsMultiple)
-    tiempoBody: TimeBodyMultiple
+    timeBody: TimeBodyMultiple
   ): Promise<{}> {
+    // get ids to users and issues
     const listUsuariosId: number[] = [];
     const listIssueId: number[] = [];
 
-    tiempoBody.logs.forEach(item => {
+    timeBody.logs.forEach(item => {
       listUsuariosId.push(item.usuario_id);
       listIssueId.push(item.issue_id);
     });
 
-    const setUsuarios = new Set(listUsuariosId);
-    const setIssues = new Set(listIssueId);
+    // clean the array so you don't have repeated items
+    const userId: number[] = this.noRepeatedItems(listUsuariosId);
+    const issueId: number[] = this.noRepeatedItems(listIssueId);
 
-    const userId: number[] = [];
-    const issueId: number[] = [];
-
-    setUsuarios.forEach(item => userId.push(item));
-    setIssues.forEach(item => issueId.push(item));
-
-
+    // I verify the existence of users and issues
     const existUsers = await this.usuarioRepository.find({
       where: { id: { inq: userId } }
     });
-
     const existIssues = await this.issueRepository.find({
       where: { id: { inq: issueId } }
     });
 
 
     if (userId.length === existUsers.length && issueId.length === existIssues.length) {
-      const objeto = tiempoBody.logs.map(item => (
+      const listLogs = timeBody.logs.map(item => (
         new Tiempo({ ...item })
       ))
-      console.info(objeto[0])
-      await this.tiempoRepository.create(objeto[0]);
-      // await this.tiempoRepository.createAll(objeto);
+      await this.tiempoRepository.createAll(listLogs);
       return {
         statusCode: 200,
-        response: tiempoBody
+        response: 'the logs were successfully registered'
       }
     }
     return {
