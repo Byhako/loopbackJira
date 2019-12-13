@@ -34,6 +34,48 @@ export class TiempoController {
     return list;
   };
 
+  cleanDetailsLogs = (array: any[]) => {
+    const detailsLogs: any[] = [];
+    const issuesIds: number[] = [];
+    let timeTotal = moment('00:00:00', "HH:mm:ss");
+
+    array.forEach(item => {
+      const horaIni = moment(item.hora_inicio, "HH:mm:ss");
+      const horaFin = moment(item.hora_fin, "HH:mm:ss");
+      const diff = horaFin.diff(horaIni);
+      timeTotal = timeTotal + diff;
+      const issue = item.issue_id;
+      const indexIssue = issuesIds.indexOf(issue);
+      if (indexIssue === -1) {
+        issuesIds.push(issue);
+        detailsLogs.push(
+          {
+            issue_id: item.issue_id,
+            horas_trabajadas: [moment.utc(diff).format("HH:mm")],
+          }
+        )
+      } else {
+        let index = 0;
+        // I get item index with issue_id === issue
+        detailsLogs.forEach((el, idx) => {
+          if (el.issue_id === issue) index = idx
+        })
+        detailsLogs[index].horas_trabajadas.push(moment.utc(diff).format("HH:mm"))
+      }
+    })
+
+    // I add the hours of each issue
+    detailsLogs.forEach((item, idx) => {
+      let time = moment('00:00', 'HH:mm');
+      item.horas_trabajadas.forEach((tm: any) => time = time + moment.utc(tm, "HH:mm"))
+      detailsLogs[idx].horas_trabajadas = moment(time).format("HH:mm");
+    })
+
+    timeTotal = moment(timeTotal).format("HH:mm");
+
+    return [detailsLogs, issuesIds, timeTotal];
+  };
+
   @get('/tiempos/{usuario_id}/{fecha_inicio}/{fecha_fin}', {
     responses: {
       '200': {
@@ -74,44 +116,11 @@ export class TiempoController {
         },
       });
 
-      let tiempoTotal = moment('00:00:00', "HH:mm:ss");
-      const detailsLogs = users.map(item => {
-        const horaIni = moment(item.hora_inicio, "HH:mm:ss");
-        const horaFin = moment(item.hora_fin, "HH:mm:ss");
+      const details = this.cleanDetailsLogs(users);
 
-        const diff = horaFin.diff(horaIni);
-        tiempoTotal = tiempoTotal + diff;
-        return {
-          horas_trabajadas: moment.utc(diff).format("HH:mm"),
-          issue_id: item.issue_id
-        }
-      })
-      tiempoTotal = moment(tiempoTotal).format("HH:mm");
-
-      // I group the times of each issue
-      const detailsLogsSum: any[] = [];
-      const issuesIds: number[] = [];
-      detailsLogs.forEach(item => {
-        const issue = item.issue_id;
-        const indexIssue = issuesIds.indexOf(issue);
-        if (indexIssue === -1) {
-          detailsLogsSum.push(item)
-          issuesIds.push(issue);
-        } else {
-          let indexDetail = 0;
-          let time = '';
-          detailsLogsSum.forEach((el, idx) => {
-            if (el.issue_id === issue) {
-              indexDetail = idx;
-              time = el.horas_trabajadas
-            }
-          })
-          time = moment(time, "HH:mm") + moment.utc(item.horas_trabajadas, "HH:mm")
-          time = moment(time).format("HH:mm");
-          detailsLogsSum.splice(indexDetail, 1)
-          detailsLogsSum.push({ horas_trabajadas: time, issue_id: issue })
-        }
-      })
+      const detailsLogs: any[] = details[0]
+      const issuesIds: number[] = details[1]
+      const tiempoTotal = details[2]
 
       const issuesList = await this.issueRepository.find({
         where: {
@@ -122,15 +131,6 @@ export class TiempoController {
       });
       const proyectosIds = issuesList.map(item => item.proyecto_id)
 
-      detailsLogsSum.forEach((item, idx) => {
-        const issueId = item.issue_id;
-        issuesList.forEach(is => {
-          if (issueId === is.id) {
-            detailsLogsSum[idx].proyecto_id = is.proyecto_id;
-          }
-        })
-      })
-
       const proyectosList = await this.proyectoRepository.find({
         where: {
           id: {
@@ -139,7 +139,17 @@ export class TiempoController {
         },
       });
 
-      const proyectos = detailsLogsSum.map(item => {
+      // I assign project id to each item of detail
+      detailsLogs.forEach((item, idx) => {
+        const issueId = item.issue_id;
+        issuesList.forEach(is => {
+          if (issueId === is.id) {
+            detailsLogs[idx].proyecto_id = is.proyecto_id;
+          }
+        })
+      })
+
+      const proyectos = detailsLogs.map(item => {
         const proyectId = item.proyecto_id;
         let proyecItem = {};
         proyectosList.forEach(pl => {
