@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import {
   repository,
+  IsolationLevel,
 } from '@loopback/repository';
 import {
   param,
@@ -248,7 +249,7 @@ export class TiempoController {
   @post('/tiempos', {
     responses: {
       '200': {
-        description: 'Usuario creado correctamente',
+        description: 'Tiempo creado correctamente',
       },
     },
   })
@@ -259,24 +260,23 @@ export class TiempoController {
     const time = new Tiempo({
       ...timeBody
     });
+    const tx = await this.tiempoRepository.beginTransaction(IsolationLevel.READ_COMMITTED);
 
-    const existUser = await this.usuarioRepository.findOne({
-      where: { id: time.usuario_id },
-    });
-    const existIssue = await this.issueRepository.findOne({
-      where: { id: time.issue_id },
-    });
-
-    if (existIssue && existUser) {
-      await this.tiempoRepository.create(time);
+    try {
+      await this.tiempoRepository.create(time, { transaction: tx });
+      await tx.commit();
       return {
         statusCode: 200,
         response: 'The time log has been created',
       }
-    }
-    return {
-      statusCode: 402,
-      response: 'The usuario_id or issue_id not exist',
+    } catch (error) {
+      console.log('error: ', error);
+      await tx.rollback();
+      return {
+        statusCode: 402,
+        response: 'The usuario_id or issue_id not exist',
+        error,
+      }
     }
   }
 

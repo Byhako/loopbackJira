@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import {
   repository,
+  IsolationLevel,
 } from '@loopback/repository';
 import {
   post,
@@ -13,6 +14,9 @@ import {
 } from '@loopback/rest';
 import { Usuario } from '../models';
 import { UsuarioRepository, TiempoRepository } from '../repositories';
+
+// const repo = new DefaultTransactionalRepository(Usuario, ds);
+// Now we have a transaction (tx)
 
 export class UsuarioController {
   constructor(
@@ -54,6 +58,7 @@ export class UsuarioController {
       }
     }
     await this.usuarioRepository.create(usuario);
+
     return {
       statusCode: 200,
       response: 'The user was created successfully',
@@ -181,6 +186,8 @@ export class UsuarioController {
     },
   })
   async delete(@param.path.number('id') id: number): Promise<{}> {
+    const tx = await this.usuarioRepository.beginTransaction(IsolationLevel.READ_COMMITTED);
+
     const exist = await this.usuarioRepository.findOne({
       where: { id },
     });
@@ -190,14 +197,20 @@ export class UsuarioController {
       });
 
       const timesIds = times.map(item => item.id);
+      timesIds.push(907898);
+      try {
+        await this.tiempoRepository.deleteAll({
+          id: {
+            inq: timesIds,
+          },
+        }, { transaction: tx });
 
-      await this.tiempoRepository.deleteAll({
-        id: {
-          inq: timesIds,
-        },
-      });
-
-      await this.usuarioRepository.deleteById(id);
+        await this.usuarioRepository.deleteById(id, { transaction: tx });
+        await tx.commit();
+      } catch (error) {
+        console.log('error: ', error);
+        await tx.rollback();
+      }
 
       return {
         statusCode: 200,
