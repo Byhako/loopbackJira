@@ -123,3 +123,8 @@ const tx: Transaction = await repo.beginTransaction({
   timeout: 30000, // 30000ms = 30s
 });
 ```
+
+1 Model
+2 Datasource
+3 Repository
+4 Controller
