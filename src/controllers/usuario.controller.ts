@@ -15,9 +15,6 @@ import {
 import { Usuario } from '../models';
 import { UsuarioRepository, TiempoRepository } from '../repositories';
 
-// const repo = new DefaultTransactionalRepository(Usuario, ds);
-// Now we have a transaction (tx)
-
 export class UsuarioController {
   constructor(
     @repository(UsuarioRepository)
@@ -207,14 +204,13 @@ export class UsuarioController {
 
         await this.usuarioRepository.deleteById(id, { transaction: tx });
         await tx.commit();
+        return {
+          statusCode: 200,
+          response: 'The user was successfully removed'
+        }
       } catch (error) {
         console.log('error: ', error);
         await tx.rollback();
-      }
-
-      return {
-        statusCode: 200,
-        response: 'The user was successfully removed'
       }
     }
     return {
